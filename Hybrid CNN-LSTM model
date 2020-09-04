@@ -1,0 +1,142 @@
+import numpy as np
+import pandas as pd
+from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import StratifiedShuffleSplit
+from keras.models import Sequential
+from keras.layers import Dense, Activation, Flatten, Convolution1D, Dropout
+from keras.optimizers import SGD
+from keras.layers.recurrent import LSTM
+from keras.utils import np_utils
+from keras.regularizers import l2
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+
+train = pd.read_csv('train1.csv')
+test = pd.read_csv('test1.csv')
+
+def encode(train, test):
+    label_encoder = LabelEncoder().fit(train.state)
+    labels = label_encoder.transform(train.state)
+    classes = list(label_encoder.classes_)
+
+    train = train.drop(['state'], axis=1)
+    test = test.drop('state', axis=1)
+
+    return train, labels, test, classes
+
+train, labels, test, classes = encode(train, test)
+scaler = StandardScaler().fit(train.values)
+scaled_train = scaler.transform(train.values)
+sss = StratifiedShuffleSplit(test_size=0.1, random_state=23)
+for train_index, valid_index in sss.split(scaled_train, labels):
+    X_train, X_valid = scaled_train[train_index], scaled_train[valid_index]
+    y_train, y_valid = labels[train_index], labels[valid_index]
+nb_features = 35 # number of features per features type (shape, texture, margin)   
+nb_class = len(classes)
+filename = '150_ep_drop_0.7'
+learning_rate = 0.01
+momentum = 0.8
+decay = 0.0
+batch_size = 16
+epochs = 15
+dropout = 0.2
+X_train_r = np.zeros((len(X_train), nb_features, 1))
+X_train_r[:, :, 0] = X_train[:, :nb_features]
+
+X_valid_r = np.zeros((len(X_valid), nb_features, 1))
+X_valid_r[:, :, 0] = X_valid[:, :nb_features]
+model = Sequential()
+model.add(Convolution1D(nb_filter=512, filter_length=1, input_shape=(nb_features, 1)))
+model.add(Activation('relu'))
+model.add(Flatten())
+model.add(Dropout(0.2))
+model.add(Dense(2048, activation='relu'))
+model.add(Dense(1024, activation='relu'))
+model.add(Dense(nb_class))
+model.add(Activation('softmax'))
+
+y_train = np_utils.to_categorical(y_train, nb_class)
+y_valid = np_utils.to_categorical(y_valid, nb_class)
+sgd = SGD(lr=0.01, nesterov=True, decay=1e-6, momentum=0.8)
+model.compile(loss='categorical_crossentropy',optimizer=sgd,metrics=['accuracy'])
+nb_epoch = 15
+history=model.fit(X_train_r, y_train, nb_epoch=nb_epoch, verbose=1,validation_data=(X_valid_r, y_valid), batch_size=16)
+
+summary = str(model.summary())
+print(model.summary())
+
+print(model.summary())
+out = open(filename + 'report.txt','w')
+out.write('Hyperparameters')
+out.write('\n')
+out.write('='*25)
+out.write('\n')
+out.write('\n')
+out.write("learning_rate: {0}".format(learning_rate))
+out.write('\n')
+out.write("momentum: {0}".format(momentum))
+out.write('\n')
+out.write("decay: {0}".format(decay))
+out.write('\n')
+out.write("batch size: {0}".format(batch_size))
+out.write('\n')
+out.write("no. epochs: {0}".format(epochs))
+out.write('\n')
+out.write("dropout: {0}".format(dropout))
+out.write('\n')
+out.write("-"*25)
+out.write('\n')
+out.write('\n')
+out.write(summary)
+out.write('\n')
+out.write('\n')
+out.write('val_acc: {0}'.format(max(history.history['val_accuracy'])))
+out.write('\n')
+out.write('val_loss: {0}'.format(min(history.history['val_loss'])))
+out.write('\n')
+out.write('train_acc: {0}'.format(max(history.history['accuracy'])))
+out.write('\n')
+out.write('train_loss: {0}'.format(min(history.history['loss'])))
+out.write('\n')
+out.write("train/val loss ratio: {0}".format(min(history.history['loss'])/min(history.history['val_loss'])))
+out.close()
+
+
+
+
+## we need to consider the loss for final submission to leaderboard
+## print(history.history.keys())
+print('val_acc: ',max(history.history['val_accuracy']))
+print('val_loss: ',min(history.history['val_loss']))
+print('train_acc: ',max(history.history['accuracy']))
+print('train_loss: ',min(history.history['loss']))
+
+print()
+print("train/val loss ratio: ", min(history.history['loss'])/min(history.history['val_loss']))
+
+# summarize history for loss
+## Plotting the loss with the number of iterations
+
+plt.figure()
+plt.semilogy(history.history['loss'])
+plt.semilogy(history.history['val_loss'])
+plt.title('model loss')
+plt.ylabel('loss')
+plt.xlabel('epoch')
+plt.legend(['train', 'test'], loc='upper left')
+plt.savefig(filename + "_loss"+".png")
+#plt.show()
+
+## Plotting the error with the number of iterations
+## With each iteration the error reduces smoothly
+plt.figure()
+plt.plot(history.history['accuracy'])
+plt.plot(history.history['val_accuracy'])
+plt.title('model accuracy')
+plt.ylabel('accuracy')
+plt.xlabel('epoch')
+plt.legend(['train', 'test'], loc='upper left')
+plt.savefig(filename + "_error" + ".png")
+#plt.show()
