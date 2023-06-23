@@ -22,7 +22,7 @@ We are team of Research Methods in Data Science at University of Hertfordshire .
 
 # Linear-Regression-Model-for-House-Price-Prediction
 
-In this tutorial you will learn how to create Machine Learning Linear Regression Model. You will be analyzing a house price predication dataset for finding out price of house on different parameters. You will do Exploratory Data Analysis, split the training and testing data, Model Evaluation and Predictions. 
+In this task we will learn how to create Machine Learning model using Regression Techniques. We will be analyzing a house price predication dataset for finding out price of house on different parameters. We will do Exploratory Data Analysis, split the training and testing data, Model Evaluation and Predictions. 
 
 ### Problem Statement
 A real state agents want the help to predict the house price using Paris House Price Prediction dataset. The task is to create a model using different regression algorithms to predict the price of house based on favourable features. 
@@ -39,7 +39,7 @@ A real state agents want the help to predict the house price using Paris House P
 
 
 ## Special Thanks 🙇
-- [Zetao Zhuang](https://github.com/zzetao) for making the amazing site for this repo!
+- [Shabih Haider](https://github.com/zzetao) for making the amazing site for this repo!
 
 🔗 &nbsp;**Connect with US**
 <p align="left">
